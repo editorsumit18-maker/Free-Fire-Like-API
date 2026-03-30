@@ -27,7 +27,8 @@ def fetch_token(uid, password):
         data = response.json()
         print("API Response:", data)
 
-        return data.get("token")
+        # ✅ handle both token types
+        return data.get("token") or data.get("access_token")
 
     except Exception as e:
         print(f"Error fetching token for UID {uid}:", e)
@@ -37,7 +38,7 @@ def update_token_file(token_list):
     try:
         with open(TOKEN_FILE, "w", encoding="utf-8") as f:
             json.dump(token_list, f, ensure_ascii=False, indent=4)
-        print("tokens.json written successfully")
+        print("tokens.json written successfully ✅")
     except Exception as e:
         print("Error writing tokens.json:", e)
 
@@ -66,7 +67,7 @@ def main():
 
         if token:
             print("Token received ✅")
-            new_tokens.append({"token": token})
+            new_tokens.append(token)   # 🔥 FIXED LINE
         else:
             print("No token received ❌")
 
