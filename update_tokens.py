@@ -6,36 +6,75 @@ TOKEN_FILE = "tokens.json"
 API_URL = "https://xtytdtyj-jwt.up.railway.app/token"
 
 def read_uidpass():
-    with open(UIDPASS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(UIDPASS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            print("UIDPASS LOADED:", data)
+            return data
+    except Exception as e:
+        print("Error reading uidpass.json:", e)
+        return []
 
 def fetch_token(uid, password):
     url = f"{API_URL}?uid={uid}&password={password}"
+    print("Request URL:", url)
+
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
+        print("Status Code:", response.status_code)
+
         response.raise_for_status()
         data = response.json()
+        print("API Response:", data)
+
         return data.get("token")
+
     except Exception as e:
-        print(f"Error fetching token for UID {uid}: {e}")
+        print(f"Error fetching token for UID {uid}:", e)
         return None
 
 def update_token_file(token_list):
-    with open(TOKEN_FILE, "w", encoding="utf-8") as f:
-        json.dump(token_list, f, ensure_ascii=False, indent=4)
+    try:
+        with open(TOKEN_FILE, "w", encoding="utf-8") as f:
+            json.dump(token_list, f, ensure_ascii=False, indent=4)
+        print("tokens.json written successfully")
+    except Exception as e:
+        print("Error writing tokens.json:", e)
 
 def main():
+    print("=== SCRIPT STARTED ===")
+
     uidpass_list = read_uidpass()
+
+    if not uidpass_list:
+        print("No UIDPASS data found ❌")
+        return
+
     new_tokens = []
+
     for item in uidpass_list:
-        token = fetch_token(item["uid"], item["password"])
+        print("Processing:", item)
+
+        uid = item.get("uid")
+        password = item.get("password")
+
+        if not uid or not password:
+            print("Invalid UID/PASSWORD format ❌")
+            continue
+
+        token = fetch_token(uid, password)
+
         if token:
+            print("Token received ✅")
             new_tokens.append({"token": token})
+        else:
+            print("No token received ❌")
+
     if new_tokens:
         update_token_file(new_tokens)
-        print("tokens.json updated successfully.")
+        print("tokens.json updated successfully ✅")
     else:
-        print("No tokens updated.")
+        print("No tokens updated ❌")
 
 if __name__ == "__main__":
     main()
